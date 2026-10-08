@@ -85,7 +85,10 @@ def calculate_order_total(
     subtotal = sum(int(item["qty"]) * int(item["unit_price_kopecks"]) for item in lines)
     discount = percent_of(subtotal, _discount_percent(units, promo_code))
     discounted_subtotal = subtotal - discount
-    base = discounted_subtotal
+    shipping = 0
+    if shipping_city and discounted_subtotal < FREE_DELIVERY_FROM_KOPEKS:
+        shipping = SHIPPING_KOPEKS
+    base = discounted_subtotal + shipping
     return base + percent_of(base, VAT_PERCENT)
 
 
