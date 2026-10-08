@@ -15,6 +15,17 @@ SHIPPING_KOPEKS = 49_000
 FREE_DELIVERY_FROM_KOPEKS = 500_000
 TIER_DISCOUNTS = ((10, 5), (25, 10), (50, 15))
 REQUIRED_LINE_KEYS = ("sku", "qty", "unit_price_kopecks")
+DIGITS = "0123456789"
+
+
+def _is_whole_number(value: str) -> bool:
+    """Check for a bare unsigned integer, the only shape the warehouse export sends.
+
+    Stricter than int() deliberately: int(" 10 "), int("+15") and int("3_0") all
+    succeed, but a spaced or signed quantity means a broken export row rather
+    than a number, so such input is rejected instead of silently accepted.
+    """
+    return value != "" and all(char in DIGITS for char in value)
 
 
 def validate_order(
@@ -31,6 +42,8 @@ def validate_order(
                 return f"line {position}: key {key} is missing"
         if not item["sku"]:
             return f"line {position}: sku must not be empty"
+        if not _is_whole_number(item["qty"]):
+            return f"line {position}: qty must be a whole number"
     return None
 
 
