@@ -28,6 +28,25 @@ def _is_whole_number(value: str) -> bool:
     return value != "" and all(char in DIGITS for char in value)
 
 
+def _check_line(position: int, item: dict[str, str]) -> str | None:
+    """Spec rules 2-7 for a single order line, or None when the line is fine."""
+    for key in REQUIRED_LINE_KEYS:
+        if key not in item:
+            return f"line {position}: key {key} is missing"
+    if not item["sku"]:
+        return f"line {position}: sku must not be empty"
+    if not _is_whole_number(item["qty"]):
+        return f"line {position}: qty must be a whole number"
+    if int(item["qty"]) <= 0:
+        return f"line {position}: qty must be greater than zero"
+    # Spec rule 7 (price must not be negative) needs no check of its own: the strict
+    # _is_whole_number above rejects every signed price first, so a separate
+    # `int(price) < 0` branch would be unreachable and would break coverage.
+    if not _is_whole_number(item["unit_price_kopecks"]):
+        return f"line {position}: unit_price_kopecks must be a whole number"
+    return None
+
+
 def validate_order(
     lines: list[dict[str, str]],
     promo_code: str = "",
@@ -37,17 +56,9 @@ def validate_order(
     if not lines:
         return "order has no lines"
     for position, item in enumerate(lines, start=1):
-        for key in REQUIRED_LINE_KEYS:
-            if key not in item:
-                return f"line {position}: key {key} is missing"
-        if not item["sku"]:
-            return f"line {position}: sku must not be empty"
-        if not _is_whole_number(item["qty"]):
-            return f"line {position}: qty must be a whole number"
-        if int(item["qty"]) <= 0:
-            return f"line {position}: qty must be greater than zero"
-        if not _is_whole_number(item["unit_price_kopecks"]):
-            return f"line {position}: unit_price_kopecks must be a whole number"
+        reason = _check_line(position, item)
+        if reason is not None:
+            return reason
     return None
 
 
