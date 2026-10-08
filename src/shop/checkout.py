@@ -81,6 +81,9 @@ def calculate_order_total(
     shipping_city: str = "",
 ) -> int | None:
     """Return the order total in kopecks, or None if the order is invalid."""
+    reason = validate_order(lines, promo_code, shipping_city)
+    if reason is not None:
+        return None
     units = sum(int(item["qty"]) for item in lines)
     subtotal = sum(int(item["qty"]) * int(item["unit_price_kopecks"]) for item in lines)
     discount = percent_of(subtotal, _discount_percent(units, promo_code))
