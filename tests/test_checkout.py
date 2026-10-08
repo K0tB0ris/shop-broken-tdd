@@ -114,7 +114,9 @@ def test_unsupported_city_is_rejected() -> None:
     assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "SUMMER15", "spb") is None
     assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "", "msk") is None
     assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "", "") is None
-    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "WELCOME10", "Izhevsk") is not None
+    assert (
+        validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "WELCOME10", "Izhevsk") is not None
+    )
     assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "", "RUSSIA") is not None
 
 
@@ -131,7 +133,12 @@ def test_valid_order_passes_validation() -> None:
 
 def test_no_discount_below_first_tier() -> None:
     """Spec 4, steps 1-2: 9 units are below every threshold."""
-    ...
+    assert validate_order([line(qty="9")]) is None
+    assert calculate_order_total([line(qty="9")]) == 108_000
+    assert calculate_order_total([line(qty="9", unit_price_kopecks="123400")]) == 1_332_720
+    assert calculate_order_total([line(qty="9", unit_price_kopecks="1000")], "WELCOME10") == 9_720
+    assert calculate_order_total([line(qty="9", unit_price_kopecks="1000")], "SUMMER15") == 9_180
+    assert calculate_order_total([line(qty="9", unit_price_kopecks="1000")], "VIP35") == 7_560
 
 
 def test_tier_discount_at_first_threshold() -> None:
