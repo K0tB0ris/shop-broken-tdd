@@ -101,7 +101,11 @@ def test_duplicate_sku_is_rejected() -> None:
 
 def test_unknown_promo_code_is_rejected() -> None:
     """Spec 3, rule 9: only codes from PROMO_CODES exist."""
-    ...
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "WELCOME10") is None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "SUMMER15") is None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "VIP35") is None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "SPBU300") is not None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "OCTOBER2026") is not None
 
 
 def test_unsupported_city_is_rejected() -> None:
