@@ -5,6 +5,8 @@ Both functions below are stubs: their signature is final, the bodies are yours.
 Do not change the constants: the tests rely on them.
 """
 
+from shop.money import percent_of
+
 PROMO_CODES = {"WELCOME10": 10, "SUMMER15": 15, "VIP35": 35}
 SUPPORTED_CITIES = ("msk", "spb")
 MAX_DISCOUNT_PERCENT = 30
@@ -13,6 +15,45 @@ SHIPPING_KOPEKS = 49_000
 FREE_DELIVERY_FROM_KOPEKS = 500_000
 TIER_DISCOUNTS = ((10, 5), (25, 10), (50, 15))
 REQUIRED_LINE_KEYS = ("sku", "qty", "unit_price_kopecks")
+DIGITS = "0123456789"
+
+
+def _is_whole_number(value: str) -> bool:
+    """Check for a bare unsigned integer, the only shape the warehouse export sends.
+
+    Stricter than int() deliberately: int(" 10 "), int("+15") and int("3_0") all
+    succeed, but a spaced or signed quantity means a broken export row rather
+    than a number, so such input is rejected instead of silently accepted.
+    """
+    return value != "" and all(char in DIGITS for char in value)
+
+
+def _check_line(position: int, item: dict[str, str]) -> str | None:
+    """Spec rules 2-7 for a single order line, or None when the line is fine."""
+    for key in REQUIRED_LINE_KEYS:
+        if key not in item:
+            return f"line {position}: key {key} is missing"
+    if not item["sku"]:
+        return f"line {position}: sku must not be empty"
+    if not _is_whole_number(item["qty"]):
+        return f"line {position}: qty must be a whole number"
+    if int(item["qty"]) <= 0:
+        return f"line {position}: qty must be greater than zero"
+    # Spec rule 7 (price must not be negative) needs no check of its own: the strict
+    # _is_whole_number above rejects every signed price first, so a separate
+    # `int(price) < 0` branch would be unreachable and would break coverage.
+    if not _is_whole_number(item["unit_price_kopecks"]):
+        return f"line {position}: unit_price_kopecks must be a whole number"
+    return None
+
+
+def _check_promo_and_city(promo_code: str, shipping_city: str) -> str | None:
+    """Spec rules 9-10 for the promo code and the delivery city."""
+    if promo_code and promo_code not in PROMO_CODES:
+        return f"unknown promo code: {promo_code}"
+    if shipping_city and shipping_city not in SUPPORTED_CITIES:
+        return f"we do not deliver to: {shipping_city}"
+    return None
 
 
 def validate_order(
@@ -21,7 +62,17 @@ def validate_order(
     shipping_city: str = "",
 ) -> str | None:
     """Return a human readable reason why the order is invalid, or None if it is fine."""
-    ...
+    if not lines:
+        return "order has no lines"
+    seen_skus: set[str] = set()
+    for position, item in enumerate(lines, start=1):
+        reason = _check_line(position, item)
+        if reason is not None:
+            return reason
+        if item["sku"] in seen_skus:
+            return f"line {position}: sku {item['sku']} is already in the order"
+        seen_skus.add(item["sku"])
+    return _check_promo_and_city(promo_code, shipping_city)
 
 
 def calculate_order_total(
@@ -30,4 +81,25 @@ def calculate_order_total(
     shipping_city: str = "",
 ) -> int | None:
     """Return the order total in kopecks, or None if the order is invalid."""
-    ...
+    reason = validate_order(lines, promo_code, shipping_city)
+    if reason is not None:
+        return None
+    units = sum(int(item["qty"]) for item in lines)
+    subtotal = sum(int(item["qty"]) * int(item["unit_price_kopecks"]) for item in lines)
+    discount = percent_of(subtotal, _discount_percent(units, promo_code))
+    discounted_subtotal = subtotal - discount
+    shipping = 0
+    if shipping_city and discounted_subtotal < FREE_DELIVERY_FROM_KOPEKS:
+        shipping = SHIPPING_KOPEKS
+    base = discounted_subtotal + shipping
+    return base + percent_of(base, VAT_PERCENT)
+
+
+def _discount_percent(units: int, promo_code: str) -> int:
+    """Bigger of tier and promo percentage, capped at MAX_DISCOUNT_PERCENT."""
+    tier_percent = 0
+    for threshold, percent in TIER_DISCOUNTS:
+        if units >= threshold:
+            tier_percent = percent
+    promo_percent = PROMO_CODES.get(promo_code, 0)
+    return min(max(tier_percent, promo_percent), MAX_DISCOUNT_PERCENT)
