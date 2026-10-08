@@ -110,7 +110,12 @@ def test_unknown_promo_code_is_rejected() -> None:
 
 def test_unsupported_city_is_rejected() -> None:
     """Spec 3, rule 10: only cities from SUPPORTED_CITIES are served."""
-    ...
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "WELCOME10", "msk") is None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "SUMMER15", "spb") is None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "", "msk") is None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "", "") is None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "WELCOME10", "Izhevsk") is not None
+    assert validate_order([line(sku="SKU-1"), line(sku="SKU-2")], "", "RUSSIA") is not None
 
 
 def test_valid_order_passes_validation() -> None:
