@@ -81,5 +81,19 @@ def calculate_order_total(
     shipping_city: str = "",
 ) -> int | None:
     """Return the order total in kopecks, or None if the order is invalid."""
+    units = sum(int(item["qty"]) for item in lines)
     subtotal = sum(int(item["qty"]) * int(item["unit_price_kopecks"]) for item in lines)
-    return subtotal + percent_of(subtotal, VAT_PERCENT)
+    discount = percent_of(subtotal, _discount_percent(units, promo_code))
+    discounted_subtotal = subtotal - discount
+    base = discounted_subtotal
+    return base + percent_of(base, VAT_PERCENT)
+
+
+def _discount_percent(units: int, promo_code: str) -> int:
+    """Bigger of tier and promo percentage, capped at MAX_DISCOUNT_PERCENT."""
+    tier_percent = 0
+    for threshold, percent in TIER_DISCOUNTS:
+        if units >= threshold:
+            tier_percent = percent
+    promo_percent = PROMO_CODES.get(promo_code, 0)
+    return min(max(tier_percent, promo_percent), MAX_DISCOUNT_PERCENT)
