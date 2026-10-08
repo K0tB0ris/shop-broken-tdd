@@ -48,9 +48,11 @@ def _check_line(position: int, item: dict[str, str]) -> str | None:
 
 
 def _check_promo_and_city(promo_code: str, shipping_city: str) -> str | None:
-    """Spec rule 9 for the promo code."""
+    """Spec rules 9-10 for the promo code and the delivery city."""
     if promo_code and promo_code not in PROMO_CODES:
         return f"unknown promo code: {promo_code}"
+    if shipping_city and shipping_city not in SUPPORTED_CITIES:
+        return f"we do not deliver to: {shipping_city}"
     return None
 
 
