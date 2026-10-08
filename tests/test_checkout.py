@@ -50,7 +50,18 @@ def test_missing_line_key_is_rejected() -> None:
 
 def test_non_numeric_quantity_is_rejected() -> None:
     """Spec 3, rule 4: `qty` must be a whole number."""
-    ...
+    assert validate_order([line(qty="3.5")]) is not None
+    assert validate_order([line(qty="fail")]) is not None
+    assert validate_order([line(qty="+15")]) is not None
+    assert validate_order([line(qty="-15")]) is not None
+    assert validate_order([line(qty=" 10")]) is not None
+    assert validate_order([line(qty=" 10 ")]) is not None
+    assert validate_order([line(qty="-3.1")]) is not None
+    assert validate_order([line(qty="3_0")]) is not None
+    assert validate_order([line(qty="3.0")]) is not None
+    assert validate_order([line(qty="3 0")]) is not None
+    assert validate_order([line(qty="5x0")]) is not None
+    assert validate_order([line(qty="0x6")]) is not None
 
 
 def test_zero_quantity_is_rejected() -> None:
