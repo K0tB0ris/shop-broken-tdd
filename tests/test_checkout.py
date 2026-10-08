@@ -39,7 +39,13 @@ def test_empty_sku_is_rejected() -> None:
 
 def test_missing_line_key_is_rejected() -> None:
     """Spec 3, rule 3: every required key must be present."""
-    ...
+    assert validate_order([{}]) is not None
+    assert validate_order([{"sku": "SKU-1"}]) is not None
+    assert validate_order([{"sku": "SKU-1", "qty": "1"}]) is not None
+    assert validate_order([{"qty": "1"}]) is not None
+    assert validate_order([{"qty": "1", "unit_price_kopecks": "10000"}]) is not None
+    assert validate_order([{"unit_price_kopecks": "10000"}]) is not None
+    assert validate_order([{"sku": "SKU-1", "unit_price_kopecks": "10000"}]) is not None
 
 
 def test_non_numeric_quantity_is_rejected() -> None:
