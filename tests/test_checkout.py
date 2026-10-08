@@ -136,34 +136,37 @@ def test_no_discount_below_first_tier() -> None:
     assert validate_order([line(qty="9")]) is None
     assert calculate_order_total([line(qty="9")]) == 108_000
     assert calculate_order_total([line(qty="9", unit_price_kopecks="123400")]) == 1_332_720
-    assert calculate_order_total([line(qty="9", unit_price_kopecks="1000")], "WELCOME10") == 9_720
-    assert calculate_order_total([line(qty="9", unit_price_kopecks="1000")], "SUMMER15") == 9_180
-    assert calculate_order_total([line(qty="9", unit_price_kopecks="1000")], "VIP35") == 7_560
 
 
 def test_tier_discount_at_first_threshold() -> None:
     """Spec 4, steps 2-5: 10 units give 5%. Compare with example 2."""
-    ...
+    assert validate_order([line(qty="10")]) is None
+    assert calculate_order_total([line(qty="10")]) == 114_000
 
 
 def test_tier_discount_at_highest_threshold() -> None:
     """Spec 4, steps 2-5: 50 units give 15%, not 5% + 10%."""
-    ...
+    assert validate_order([line(qty="50")]) is None
+    assert calculate_order_total([line(qty="50")]) == 510_000
 
 
 def test_promo_code_beats_tier_discount() -> None:
     """Spec 4, steps 3-4: the bigger percentage wins, the two do not add up."""
-    ...
+    assert calculate_order_total([line(qty="25")]) == 270_000
+    assert calculate_order_total([line(qty="25")], "SUMMER15") == 255_000
 
 
 def test_discount_is_capped_at_thirty_percent() -> None:
     """Spec 4, step 5: VIP35 gives 35%, but the cap is 30%. Compare with example 4."""
-    ...
+    assert calculate_order_total([line(qty="25")], "VIP35") == 210_000
+    assert calculate_order_total([line(qty="50")], "VIP35") == 420_000
 
 
 def test_delivery_is_charged_for_small_order() -> None:
     """Spec 4, steps 7-10: a city adds SHIPPING_KOPEKS and VAT is charged on it."""
-    ...
+    assert calculate_order_total([line(qty="1", unit_price_kopecks="499999")], "", "msk") == 658_799
+    assert calculate_order_total([line(qty="1", unit_price_kopecks="500000")], "", "msk") == 600_000
+
 
 
 def test_free_delivery_uses_discounted_subtotal() -> None:
