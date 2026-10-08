@@ -47,6 +47,13 @@ def _check_line(position: int, item: dict[str, str]) -> str | None:
     return None
 
 
+def _check_promo_and_city(promo_code: str, shipping_city: str) -> str | None:
+    """Spec rule 9 for the promo code."""
+    if promo_code and promo_code not in PROMO_CODES:
+        return f"unknown promo code: {promo_code}"
+    return None
+
+
 def validate_order(
     lines: list[dict[str, str]],
     promo_code: str = "",
@@ -63,7 +70,7 @@ def validate_order(
         if item["sku"] in seen_skus:
             return f"line {position}: sku {item['sku']} is already in the order"
         seen_skus.add(item["sku"])
-    return None
+    return _check_promo_and_city(promo_code, shipping_city)
 
 
 def calculate_order_total(
