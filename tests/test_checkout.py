@@ -72,7 +72,18 @@ def test_zero_quantity_is_rejected() -> None:
 
 def test_non_numeric_price_is_rejected() -> None:
     """Spec 3, rule 6: `unit_price_kopecks` must be a whole number."""
-    ...
+    assert validate_order([line(unit_price_kopecks="3.5")]) is not None
+    assert validate_order([line(unit_price_kopecks="fail")]) is not None
+    assert validate_order([line(unit_price_kopecks="+15")]) is not None
+    assert validate_order([line(unit_price_kopecks="-15")]) is not None
+    assert validate_order([line(unit_price_kopecks=" 10")]) is not None
+    assert validate_order([line(unit_price_kopecks=" 10 ")]) is not None
+    assert validate_order([line(unit_price_kopecks="-3.1")]) is not None
+    assert validate_order([line(unit_price_kopecks="3_0")]) is not None
+    assert validate_order([line(unit_price_kopecks="3.0")]) is not None
+    assert validate_order([line(unit_price_kopecks="3 0")]) is not None
+    assert validate_order([line(unit_price_kopecks="5x0")]) is not None
+    assert validate_order([line(unit_price_kopecks="0x6")]) is not None
 
 
 def test_negative_price_is_rejected() -> None:
