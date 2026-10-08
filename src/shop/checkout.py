@@ -46,6 +46,8 @@ def validate_order(
             return f"line {position}: qty must be a whole number"
         if int(item["qty"]) <= 0:
             return f"line {position}: qty must be greater than zero"
+        if not _is_whole_number(item["unit_price_kopecks"]):
+            return f"line {position}: unit_price_kopecks must be a whole number"
     return None
 
 
