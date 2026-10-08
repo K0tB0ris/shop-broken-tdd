@@ -181,3 +181,10 @@ def test_vat_is_charged_on_the_discounted_sum() -> None:
     assert calculate_order_total([line(qty="500")], "VIP35") == 4_200_000
     assert calculate_order_total([line(qty="500")], "VIP35", "spb") == 4_200_000
     assert calculate_order_total([line(qty="50")], "VIP35", "spb") == 478_800
+
+
+def test_invalid_order_has_no_total() -> None:
+    """Spec 4: an order rejected by validation has no total at all."""
+    assert calculate_order_total([]) is None
+    assert calculate_order_total([{}]) is None
+    assert calculate_order_total([line(qty="3.5")]) is None
